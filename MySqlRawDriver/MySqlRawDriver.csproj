@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D9E7B667-587C-46F4-A93A-1FE6149E7B5C}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>MySqlJunkie</RootNamespace>
-    <AssemblyName>MySqlJunkie</AssemblyName>
+    <ProjectGuid>{AEAC3B86-FA3C-4773-AB9E-C186D7934A79}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MySqlRawDriver</RootNamespace>
+    <AssemblyName>MySqlRawDriver</AssemblyName>
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -42,22 +40,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="Auth\NativePassword.cs" />
+    <Compile Include="Enumerations\ColumnFlags.cs" />
+    <Compile Include="Enumerations\Commands.cs" />
+    <Compile Include="Enumerations\InternalType.cs" />
+    <Compile Include="Enumerations\StatusFlags.cs" />
+    <Compile Include="Enumerations\RawFieldType.cs" />
+    <Compile Include="MyRawDbReader.cs" />
+    <Compile Include="MyRawDbParameterCollection.cs" />
+    <Compile Include="MyRawDbParameter.cs" />
+    <Compile Include="MyRawDbCommand.cs" />
+    <Compile Include="MyRawDbConnection.cs" />
+    <Compile Include="MyRawOptions.cs" />
+    <Compile Include="MyRawResultField.cs" />
+    <Compile Include="MyRawResultSet.cs" />
+    <Compile Include="MyRawException.cs" />
+    <Compile Include="Enumerations\ResultMode.cs" />
+    <Compile Include="Enumerations\CapabilityFlags.cs" />
+    <Compile Include="ServerInfo.cs" />
+    <Compile Include="Packets\PacketReader.cs" />
+    <Compile Include="Packets\PacketBuilder.cs" />
+    <Compile Include="MyRawNativeConnection.cs" />
+    <Compile Include="Packets\OkResult.cs" />
+    <Compile Include="Packets\HandshakeResponse.cs" />
+    <Compile Include="Packets\HandshakeRequest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\MySqlRawDriver\MySqlRawDriver.csproj">
-      <Project>{AEAC3B86-FA3C-4773-AB9E-C186D7934A79}</Project>
-      <Name>MySqlRawDriver</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Dapper">
-      <Version>1.50.4</Version>
-    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
