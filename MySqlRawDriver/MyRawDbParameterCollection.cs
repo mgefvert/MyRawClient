@@ -7,25 +7,27 @@ namespace MySqlRawDriver
 {
     public class MyRawDbParameterCollection : List<MyRawDbParameter>, IDataParameterCollection
     {
+        private bool Like(string a, string b) => string.Compare(a, b, StringComparison.InvariantCultureIgnoreCase) == 0;
+
         public bool Contains(string parameterName)
         {
-            return this.Any(x => x.ParameterName == parameterName);
+            return this.Any(x => Like(x.ParameterName, parameterName));
         }
 
         public int IndexOf(string parameterName)
         {
-            return FindIndex(x => x.ParameterName == parameterName);
+            return FindIndex(x => Like(x.ParameterName, parameterName));
         }
 
         public void RemoveAt(string parameterName)
         {
-            RemoveAll(x => x.ParameterName == parameterName);
+            RemoveAll(x => Like(x.ParameterName, parameterName));
         }
 
         public object this[string parameterName]
         {
-            get => this.First(x => x.ParameterName == parameterName).Value;
-            set => this.First(x => x.ParameterName == parameterName).Value = value;
+            get => this.First(x => Like(x.ParameterName, parameterName)).Value;
+            set => this.First(x => Like(x.ParameterName, parameterName)).Value = value;
         }
     }
 }

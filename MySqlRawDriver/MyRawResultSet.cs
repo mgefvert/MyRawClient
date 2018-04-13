@@ -15,19 +15,19 @@ namespace MySqlRawDriver
         private readonly List<byte[]> _buffers;
         private readonly List<int> _lengths;
         private readonly List<int> _offsets;
-        private readonly int _columns;
+        private readonly int _fields;
         private int _rows;
 
         public List<MyRawResultField> Fields { get; } = new List<MyRawResultField>();
         public int RowCount => _rows;
-        public int ColumnCount => _columns;
+        public int FieldCount => _fields;
 
-        public MyRawResultSet(int columns, int capacity, Encoding encoding)
+        public MyRawResultSet(int fields, int capacity, Encoding encoding)
         {
-            _columns = columns;
+            _fields = fields;
             _buffers = new List<byte[]>(capacity);
-            _lengths = new List<int>(capacity * columns);
-            _offsets = new List<int>(capacity * columns);
+            _lengths = new List<int>(capacity * fields);
+            _offsets = new List<int>(capacity * fields);
             _encoding = encoding;
         }
 
@@ -43,7 +43,7 @@ namespace MySqlRawDriver
             _buffers.Add(buffer);
             
             var position = 0;
-            for (var i = 0; i < _columns; i++)
+            for (var i = 0; i < _fields; i++)
             {
                 var isNull = PacketReader.ConsumeNull(buffer, ref position);
                 if (isNull)
@@ -69,7 +69,7 @@ namespace MySqlRawDriver
                 throw new ObjectDisposedException("Result set is disposed.");
         }
 
-        public T Get<T>(int row, int column) where T : struct
+        public T Get<T>(int row, int column)
         {
             var s = GetValue(row, column);
             if (s == null)
@@ -197,7 +197,9 @@ namespace MySqlRawDriver
         private int MakeIndex(int row, int column)
         {
             CheckDisposed();
-            return row < _rows && column < _columns ? row * _columns + column : throw new ArgumentOutOfRangeException();
+            return row < _rows && column < _fields 
+                ? row * _fields + column 
+                : throw new MyRawException($"Row {row}, column {column} does not exist");
         }
 
         private void ParseNumber(int row, int column, string desiredType, out ulong number, out bool sign)

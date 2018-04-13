@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2011
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MySqlJunkie", "MySqlJunkie\MySqlJunkie.csproj", "{D9E7B667-587C-46F4-A93A-1FE6149E7B5C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MySqlRawDriver", "MySqlRawDriver\MySqlRawDriver.csproj", "{AEAC3B86-FA3C-4773-AB9E-C186D7934A79}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MySqlRawTest", "MySqlRawTest\MySqlRawTest.csproj", "{8B225CC9-652D-429E-88D3-24DAC5802535}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,18 +14,18 @@ Global
 		ReleaseNET40_Only|Any CPU = ReleaseNET40_Only|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D9E7B667-587C-46F4-A93A-1FE6149E7B5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D9E7B667-587C-46F4-A93A-1FE6149E7B5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D9E7B667-587C-46F4-A93A-1FE6149E7B5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D9E7B667-587C-46F4-A93A-1FE6149E7B5C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D9E7B667-587C-46F4-A93A-1FE6149E7B5C}.ReleaseNET40_Only|Any CPU.ActiveCfg = Release|Any CPU
-		{D9E7B667-587C-46F4-A93A-1FE6149E7B5C}.ReleaseNET40_Only|Any CPU.Build.0 = Release|Any CPU
 		{AEAC3B86-FA3C-4773-AB9E-C186D7934A79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AEAC3B86-FA3C-4773-AB9E-C186D7934A79}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AEAC3B86-FA3C-4773-AB9E-C186D7934A79}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AEAC3B86-FA3C-4773-AB9E-C186D7934A79}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AEAC3B86-FA3C-4773-AB9E-C186D7934A79}.ReleaseNET40_Only|Any CPU.ActiveCfg = Release|Any CPU
 		{AEAC3B86-FA3C-4773-AB9E-C186D7934A79}.ReleaseNET40_Only|Any CPU.Build.0 = Release|Any CPU
+		{8B225CC9-652D-429E-88D3-24DAC5802535}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B225CC9-652D-429E-88D3-24DAC5802535}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B225CC9-652D-429E-88D3-24DAC5802535}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B225CC9-652D-429E-88D3-24DAC5802535}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B225CC9-652D-429E-88D3-24DAC5802535}.ReleaseNET40_Only|Any CPU.ActiveCfg = Release|Any CPU
+		{8B225CC9-652D-429E-88D3-24DAC5802535}.ReleaseNET40_Only|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

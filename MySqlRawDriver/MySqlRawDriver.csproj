@@ -46,11 +46,12 @@
     <Compile Include="Enumerations\InternalType.cs" />
     <Compile Include="Enumerations\StatusFlags.cs" />
     <Compile Include="Enumerations\RawFieldType.cs" />
+    <Compile Include="MyRawDbTransaction.cs" />
     <Compile Include="MyRawDbReader.cs" />
     <Compile Include="MyRawDbParameterCollection.cs" />
     <Compile Include="MyRawDbParameter.cs" />
     <Compile Include="MyRawDbCommand.cs" />
-    <Compile Include="MyRawDbConnection.cs" />
+    <Compile Include="MyRawHelper.cs" />
     <Compile Include="MyRawOptions.cs" />
     <Compile Include="MyRawResultField.cs" />
     <Compile Include="MyRawResultSet.cs" />
@@ -60,8 +61,8 @@
     <Compile Include="ServerInfo.cs" />
     <Compile Include="Packets\PacketReader.cs" />
     <Compile Include="Packets\PacketBuilder.cs" />
-    <Compile Include="MyRawNativeConnection.cs" />
-    <Compile Include="Packets\OkResult.cs" />
+    <Compile Include="MyRawDbConnection.cs" />
+    <Compile Include="Packets\Result.cs" />
     <Compile Include="Packets\HandshakeResponse.cs" />
     <Compile Include="Packets\HandshakeRequest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

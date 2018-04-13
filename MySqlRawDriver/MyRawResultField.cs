@@ -19,6 +19,14 @@ namespace MySqlRawDriver
         public InternalType InternalType { get; set; }
         public Type FieldType { get; set; }
 
+        public bool IsAutoIncrement => Flags.HasFlag(ColumnFlags.AutoIncrement);
+        public bool IsBlob => Flags.HasFlag(ColumnFlags.Blob);
+        public bool IsEnum => Flags.HasFlag(ColumnFlags.Enum);
+        public bool IsNullable => !Flags.HasFlag(ColumnFlags.NotNull);
+        public bool IsPrimaryKey => Flags.HasFlag(ColumnFlags.PrimaryKey);
+        public bool IsUniqueKey => Flags.HasFlag(ColumnFlags.UniqueKey);
+        public bool IsUnsigned => Flags.HasFlag(ColumnFlags.Unsigned);
+
         public static InternalType DataTypeToInternalType(RawFieldType type, ColumnFlags flags)
         {
             switch (type)

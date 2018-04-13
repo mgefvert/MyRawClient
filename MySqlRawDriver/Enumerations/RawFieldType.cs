@@ -2,7 +2,7 @@
 
 namespace MySqlRawDriver.Enumerations
 {
-    public enum RawFieldType
+    public enum RawFieldType : byte
     {
         Decimal = 0x00,
         Tiny = 0x01,

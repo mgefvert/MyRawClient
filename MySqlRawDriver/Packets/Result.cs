@@ -4,37 +4,37 @@ using MySqlRawDriver.Enumerations;
 
 namespace MySqlRawDriver.Packets
 {
-    public class OkResult
+    public class Result
     {
-        public ulong AffectedRows { get; set; }
-        public ulong LastInsertId { get; set; }
-        public StatusFlags Status { get; set; }
-        public ushort Warnings { get; set; }
+        public long RowsAffected { get; set; }
         public string Info { get; set; }
+        public long LastInsertId { get; set; }
+        public StatusFlags Status { get; set; }
+        public int Warnings { get; set; }
 
         public override string ToString()
         {
-            return $"OK/EOF rows={AffectedRows} lastId={LastInsertId} status={Status} warn={Warnings} info={Info}";
+            return $"OK/EOF rows={RowsAffected} lastId={LastInsertId} status={Status} warn={Warnings} info={Info}";
         }
 
-        public static OkResult Decode(byte[] buffer, Encoding encoding)
+        public static Result Decode(byte[] buffer, Encoding encoding)
         {
             var position = 0;
             var mode = (ResultMode) PacketReader.ReadInt1(buffer, ref position);
             switch (mode)
             {
                 case ResultMode.Ok:
-                    return new OkResult
+                    return new Result
                     {
-                        AffectedRows = PacketReader.ReadIntLengthEncoded(buffer, ref position),
-                        LastInsertId = PacketReader.ReadIntLengthEncoded(buffer, ref position),
+                        RowsAffected = (long)PacketReader.ReadIntLengthEncoded(buffer, ref position),
+                        LastInsertId = (long)PacketReader.ReadIntLengthEncoded(buffer, ref position),
                         Status = (StatusFlags) PacketReader.ReadInt2(buffer, ref position),
                         Warnings = PacketReader.ReadInt2(buffer, ref position),
                         Info = PacketReader.ReadStringToEnd(buffer, ref position, encoding)
                     };
 
                 case ResultMode.Eof:
-                    return new OkResult
+                    return new Result
                     {
                         Warnings = PacketReader.ReadInt2(buffer, ref position),
                         Status = (StatusFlags) PacketReader.ReadInt2(buffer, ref position)
