@@ -1,7 +1,7 @@
 ﻿using System;
 using MySqlRawDriver.Enumerations;
 
-namespace MySqlRawDriver
+namespace MySqlRawDriver.Internal
 {
     public class ServerInfo
     {

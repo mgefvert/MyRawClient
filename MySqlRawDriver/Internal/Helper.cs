@@ -3,9 +3,9 @@ using System.Data;
 using System.Globalization;
 using System.Text;
 
-namespace MySqlRawDriver
+namespace MySqlRawDriver.Internal
 {
-    public class MyRawHelper
+    public class Helper
     {
         private static bool IsBackslashChar(char c)
         {
@@ -25,7 +25,7 @@ namespace MySqlRawDriver
 
         }
 
-        public static void ParseConnectionString(string connectionString, MyRawOptions options)
+        public static void ParseConnectionString(string connectionString, Options options)
         {
             var fields = connectionString.Split(';');
             foreach (var field in fields)

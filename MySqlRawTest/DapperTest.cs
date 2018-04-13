@@ -25,7 +25,7 @@ namespace MySqlRawTest
     [TestClass]
     public class DapperTest
     {
-        private MyRawDbConnection _connection;
+        private MyRawConnection _connection;
 
         [TestInitialize]
         public void Setup()
@@ -33,6 +33,7 @@ namespace MySqlRawTest
             _connection = Global.GetConnection();
         }
 
+        [TestCleanup]
         public void Teardown()
         {
             _connection.Dispose();

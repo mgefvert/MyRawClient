@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Text;
 
-namespace MySqlRawDriver
+namespace MySqlRawDriver.Internal
 {
-    public class MyRawOptions
+    public class Options
     {
         public int CommandTimeout { get; set; } = 30;
         public int ConnectTimeout { get; set; } = 15;

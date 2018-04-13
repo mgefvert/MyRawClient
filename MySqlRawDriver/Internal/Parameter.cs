@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Data;
 
-namespace MySqlRawDriver
+namespace MySqlRawDriver.Internal
 {
-    public class MyRawDbParameter : IDbDataParameter
+    public class Parameter : IDbDataParameter
     {
         public DbType DbType { get; set; }
         public ParameterDirection Direction { get; set; }

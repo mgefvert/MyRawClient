@@ -1,9 +1,9 @@
 ﻿using System;
 using MySqlRawDriver.Enumerations;
 
-namespace MySqlRawDriver
+namespace MySqlRawDriver.Internal
 {
-    public class MyRawResultField
+    public class ResultField
     {
         public string Catalog { get; set; }
         public ushort CharSet { get; set; }

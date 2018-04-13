@@ -56,10 +56,14 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Auth\NativePasswordTest.cs" />
     <Compile Include="Global.cs" />
     <Compile Include="DapperTest.cs" />
-    <Compile Include="MyRawHelperTest.cs" />
-    <Compile Include="MyRawDbConnectionTest.cs" />
+    <Compile Include="Internal\ParameterCollectionTest.cs" />
+    <Compile Include="Internal\HelperTest.cs" />
+    <Compile Include="MyRawCommandTest.cs" />
+    <Compile Include="MyRawTransactionTest.cs" />
+    <Compile Include="MyRawConnectionTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

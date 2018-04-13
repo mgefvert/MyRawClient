@@ -3,13 +3,13 @@ using System.Data;
 
 namespace MySqlRawDriver
 {
-    public class MyRawDbTransaction : IDbTransaction
+    public class MyRawTransaction : IDbTransaction
     {
         public IDbConnection Connection { get; }
         public IsolationLevel IsolationLevel { get; } = IsolationLevel.Unspecified;
         private bool _active = true;
 
-        public MyRawDbTransaction(MyRawDbConnection connection)
+        public MyRawTransaction(MyRawConnection connection)
         {
             Connection = connection;
             connection.Execute("start transaction");
@@ -27,7 +27,7 @@ namespace MySqlRawDriver
                 throw new DataException("Cannot commit transaction; no transaction is currently active.");
 
             _active = false;
-            ((MyRawDbConnection) Connection).Execute("commit");
+            ((MyRawConnection) Connection).Execute("commit");
         }
 
         public void Rollback()
@@ -36,7 +36,7 @@ namespace MySqlRawDriver
                 throw new DataException("Cannot commit transaction; no transaction is currently active.");
 
             _active = false;
-            ((MyRawDbConnection) Connection).Execute("rollback");
+            ((MyRawConnection) Connection).Execute("rollback");
         }
     }
 }

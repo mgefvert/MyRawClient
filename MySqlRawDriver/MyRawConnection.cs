@@ -6,15 +6,16 @@ using System.Linq;
 using System.Net.Sockets;
 using MySqlRawDriver.Auth;
 using MySqlRawDriver.Enumerations;
+using MySqlRawDriver.Internal;
 using MySqlRawDriver.Packets;
 
 namespace MySqlRawDriver
 {
-    public class MyRawDbConnection : IDbConnection
+    public class MyRawConnection : IDbConnection
     {
         public string ConnectionString { get; set; }
         public string Database { get; private set; }
-        public MyRawOptions Options { get; } = new MyRawOptions();
+        public Options Options { get; } = new Options();
         public Result Result { get; protected set; }
         public ConnectionState State { get; protected set; } = ConnectionState.Closed;
         public ServerInfo ServerInfo { get; } = new ServerInfo();
@@ -28,16 +29,16 @@ namespace MySqlRawDriver
         private byte _sequence;
         private readonly byte[] _lastHeader = new byte[4];
 
-        public MyRawDbConnection()
+        public MyRawConnection()
         {
         }
 
-        public MyRawDbConnection(string connectionString)
+        public MyRawConnection(string connectionString)
         {
             ConnectionString = connectionString;
         }
 
-        ~MyRawDbConnection()
+        ~MyRawConnection()
         {
             Dispose();
         }
@@ -64,7 +65,7 @@ namespace MySqlRawDriver
                 throw new InvalidOperationException("Unable to perform operation when connection state is " + State);
         }
 
-        protected List<MyRawResultSet> DoQuery(string sql, int capacity = 256)
+        protected List<ResultSet> DoQuery(string sql, int capacity = 256)
         {
             AssertStateIs(ConnectionState.Open);
 
@@ -77,7 +78,7 @@ namespace MySqlRawDriver
             builder.AppendStringFixed(sql);
             SendPacket(builder.ToPacket());
 
-            List<MyRawResultSet> results = null;
+            List<ResultSet> results = null;
             do
             {
                 // Read response
@@ -94,7 +95,7 @@ namespace MySqlRawDriver
                 // Read column count and initialize reader
                 var position = 0;
                 var columnCount = (int) PacketReader.ReadIntLengthEncoded(packet, ref position);
-                var resultSet = new MyRawResultSet(columnCount, capacity, Options.Encoding);
+                var resultSet = new ResultSet(columnCount, capacity, Options.Encoding);
 
                 // Fetch column definitions
                 State = ConnectionState.Fetching;
@@ -117,7 +118,7 @@ namespace MySqlRawDriver
                 }
 
                 if (results == null)
-                    results = new List<MyRawResultSet>();
+                    results = new List<ResultSet>();
                 results.Add(resultSet);
             } while (Result.Status.HasFlag(StatusFlags.MoreResultsExist));
 
@@ -125,9 +126,9 @@ namespace MySqlRawDriver
             return results;
         }
 
-        private MyRawResultField FetchColumnDefinition()
+        private ResultField FetchColumnDefinition()
         {
-            var item = new MyRawResultField();
+            var item = new ResultField();
             var packet = ReadPacket();
             var position = 0;
 
@@ -146,8 +147,8 @@ namespace MySqlRawDriver
             item.Flags = (ColumnFlags) PacketReader.ReadInt2(packet, ref position);
             item.Decimals = PacketReader.ReadInt1(packet, ref position);
 
-            item.InternalType = MyRawResultField.DataTypeToInternalType(item.DataType, item.Flags);
-            item.FieldType = MyRawResultField.InternalTypeToType(item.InternalType);
+            item.InternalType = ResultField.DataTypeToInternalType(item.DataType, item.Flags);
+            item.FieldType = ResultField.InternalTypeToType(item.InternalType);
 
             return item;
         }
@@ -236,7 +237,7 @@ namespace MySqlRawDriver
 
         public IDbTransaction BeginTransaction(IsolationLevel il)
         {
-            return new MyRawDbTransaction(this);
+            return new MyRawTransaction(this);
         }
 
         public void Close()
@@ -278,7 +279,7 @@ namespace MySqlRawDriver
 
         public IDbCommand CreateCommand()
         {
-            return new MyRawDbCommand(this);
+            return new MyRawCommand(this);
         }
 
         public Result Execute(string sql)
@@ -290,7 +291,7 @@ namespace MySqlRawDriver
         public void Open()
         {
             if (!string.IsNullOrWhiteSpace(ConnectionString))
-                MyRawHelper.ParseConnectionString(ConnectionString, Options);
+                Helper.ParseConnectionString(ConnectionString, Options);
 
             AssertStateIs(ConnectionState.Closed);
             State = ConnectionState.Connecting;
@@ -338,12 +339,12 @@ namespace MySqlRawDriver
             HandleOkPacket(ReadPacket());
         }
 
-        public MyRawResultSet Query(string sql)
+        public ResultSet Query(string sql)
         {
             return DoQuery(sql)?.FirstOrDefault();
         }
 
-        public List<MyRawResultSet> QueryMultiple(string sql)
+        public List<ResultSet> QueryMultiple(string sql)
         {
             return DoQuery(sql);
         }
@@ -360,11 +361,11 @@ namespace MySqlRawDriver
             return result == null || result.First().RowCount == 0 ? default(T) : result.First().Get<T>(0, 0);
         }
 
-        public string QuoteIdentifier(string field) => MyRawHelper.QuoteIdentifier(field);
+        public string QuoteIdentifier(string field) => Helper.QuoteIdentifier(field);
 
-        public string QuoteIdentifier(string table, string field) => MyRawHelper.QuoteIdentifier(table, field);
+        public string QuoteIdentifier(string table, string field) => Helper.QuoteIdentifier(table, field);
 
-        public string QuoteString(string value) => MyRawHelper.QuoteString(value);
+        public string QuoteString(string value) => Helper.QuoteString(value);
 
         public void ResetConnection()
         {

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 
-namespace MySqlRawDriver
+namespace MySqlRawDriver.Internal
 {
-    public class MyRawDbParameterCollection : List<MyRawDbParameter>, IDataParameterCollection
+    public class ParameterCollection : List<Parameter>, IDataParameterCollection
     {
         private bool Like(string a, string b) => string.Compare(a, b, StringComparison.InvariantCultureIgnoreCase) == 0;
 

@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Data;
-using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MySqlRawDriver;
 
 namespace MySqlRawTest
 {
     [TestClass]
-    public class MyRawDbConnectionTest
+    public class MyRawConnectionTest
     {
-        private MyRawDbConnection _connection;
+        private MyRawConnection _connection;
 
         [TestInitialize]
         public void Setup()
@@ -17,6 +16,7 @@ namespace MySqlRawTest
             _connection = Global.GetConnection();
         }
 
+        [TestCleanup]
         public void Teardown()
         {
             _connection.Dispose();

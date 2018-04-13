@@ -7,9 +7,9 @@ using MySqlRawDriver.Packets;
 
 // ReSharper disable ParameterOnlyUsedForPreconditionCheck.Local
 
-namespace MySqlRawDriver
+namespace MySqlRawDriver.Internal
 {
-    public class MyRawResultSet : IDisposable
+    public class ResultSet : IDisposable
     {
         private readonly Encoding _encoding;
         private readonly List<byte[]> _buffers;
@@ -18,11 +18,11 @@ namespace MySqlRawDriver
         private readonly int _fields;
         private int _rows;
 
-        public List<MyRawResultField> Fields { get; } = new List<MyRawResultField>();
+        public List<ResultField> Fields { get; } = new List<ResultField>();
         public int RowCount => _rows;
         public int FieldCount => _fields;
 
-        public MyRawResultSet(int fields, int capacity, Encoding encoding)
+        public ResultSet(int fields, int capacity, Encoding encoding)
         {
             _fields = fields;
             _buffers = new List<byte[]>(capacity);

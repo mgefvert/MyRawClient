@@ -1,6 +1,7 @@
 ﻿drop table if exists test;
 drop table if exists scratch;
 drop table if exists names;
+drop procedure if exists supposedly_random;
 
 select rand();
 
@@ -20,6 +21,11 @@ create table names
 	count integer     not null,
 	primary key (name, sex)
 );
+
+create procedure supposedly_random()
+begin
+    select 42;
+end;
 
 insert into names (name, sex, count) VALUES 
 	('Aaliyah', 'F', 74710), ('Aaron', 'M', 560843), ('Abbey', 'F', 16902), ('Abbie', 'F', 21087), ('Abbigail', 'F', 11061), ('Abby', 'F', 56135), ('Abel', 'M', 44378), 
@@ -437,5 +443,3 @@ insert into names (name, sex, count) VALUES
 	('Yvette', 'F', 62841), ('Yvonne', 'F', 155091), ('Zachariah', 'M', 25310), ('Zachary', 'M', 523253), ('Zachery', 'M', 29211), ('Zackary', 'M', 29672), 
 	('Zackery', 'M', 17167), ('Zander', 'M', 16997), ('Zane', 'M', 41525), ('Zayden', 'M', 12451), ('Zelda', 'F', 12409), ('Zella', 'F', 11901), 
 	('Zelma', 'F', 16693), ('Zion', 'M', 22546), ('Zoe', 'F', 110814), ('Zoey', 'F', 64654);
-
-select now();

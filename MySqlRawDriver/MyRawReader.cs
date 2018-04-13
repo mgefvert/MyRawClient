@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using MySqlRawDriver.Internal;
 
 namespace MySqlRawDriver
 {
-    public class MyRawDbReader : IDataReader
+    public class MyRawReader : IDataReader
     {
-        private MyRawResultSet _current;
-        private readonly List<MyRawResultSet> _list;
+        private ResultSet _current;
+        private readonly List<ResultSet> _list;
         private int _row = -1;
 
         private static readonly Tuple<string, Type, bool>[] SchemaTableDefinition =
@@ -37,7 +38,7 @@ namespace MySqlRawDriver
             new Tuple<string, Type, bool>("IsReadOnly", typeof(bool), false)
         };
 
-        public MyRawResultSet CurrentResult => _current ?? throw new DataException("No active result set.");
+        public ResultSet CurrentResult => _current ?? throw new DataException("No active result set.");
 
         public int Depth { get; } = 0;
         public bool IsClosed { get; set; }
@@ -46,11 +47,16 @@ namespace MySqlRawDriver
         public object this[int i] => GetValue(i);
         public object this[string name] => GetValue(GetOrdinal(name));
 
-        internal MyRawDbReader(List<MyRawResultSet> list)
+        internal MyRawReader(List<ResultSet> list)
         {
             _list = list;
             IsClosed = false;
             NextResult();
+        }
+
+        public void Dispose()
+        {
+            IsClosed = true;
         }
 
         public void Close()
@@ -68,9 +74,24 @@ namespace MySqlRawDriver
             return CurrentResult.Get<byte>(_row, i);
         }
 
+        public long GetBytes(int i, long fieldoffset, byte[] buffer, int bufferoffset, int length)
+        {
+            return CurrentResult.GetBytes(_row, i, fieldoffset, buffer, bufferoffset, length);
+        }
+
         public char GetChar(int i)
         {
             return CurrentResult.GetString(_row, i)[0];
+        }
+
+        public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
+        {
+            return CurrentResult.GetChars(_row, i, fieldoffset, buffer, bufferoffset, length);
+        }
+
+        public IDataReader GetData(int i)
+        {
+            return null;
         }
 
         public string GetDataTypeName(int i)
@@ -133,54 +154,6 @@ namespace MySqlRawDriver
             return CurrentResult.Fields.FindIndex(x => x.Name == name);
         }
 
-        public string GetString(int i)
-        {
-            return CurrentResult.GetString(_row, i);
-        }
-
-        public object GetValue(int i)
-        {
-            return CurrentResult.GetValue(_row, i);
-        }
-
-        public bool IsDBNull(int i)
-        {
-            return CurrentResult.IsNull(_row, i);
-        }
-
-        public bool Read()
-        {
-            return ++_row < CurrentResult.RowCount;
-        }
-
-        public long GetBytes(int i, long fieldoffset, byte[] buffer, int bufferoffset, int length)
-        {
-            return CurrentResult.GetBytes(_row, i, fieldoffset, buffer, bufferoffset, length);
-        }
-
-        public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
-        {
-            return CurrentResult.GetChars(_row, i, fieldoffset, buffer, bufferoffset, length);
-        }
-
-        public void Dispose()
-        {
-            IsClosed = true;
-        }
-
-        public int GetValues(object[] values)
-        {
-            for (var i = 0; i < values.Length; i++)
-                values[i] = GetValue(i);
-
-            return values.Length;
-        }
-
-        public IDataReader GetData(int i)
-        {
-            return null;
-        }
-        
         public DataTable GetSchemaTable()
         {
             var result = new DataTable("SchemaTable");
@@ -218,6 +191,29 @@ namespace MySqlRawDriver
             return result;
         }
 
+        public string GetString(int i)
+        {
+            return CurrentResult.GetString(_row, i);
+        }
+
+        public object GetValue(int i)
+        {
+            return CurrentResult.GetValue(_row, i);
+        }
+
+        public int GetValues(object[] values)
+        {
+            for (var i = 0; i < values.Length; i++)
+                values[i] = GetValue(i);
+
+            return values.Length;
+        }
+
+        public bool IsDBNull(int i)
+        {
+            return CurrentResult.IsNull(_row, i);
+        }
+
         public bool NextResult()
         {
             _row = -1;
@@ -227,6 +223,11 @@ namespace MySqlRawDriver
 
             _list.RemoveAt(0);
             return true;
+        }
+
+        public bool Read()
+        {
+            return ++_row < CurrentResult.RowCount;
         }
     }
 }

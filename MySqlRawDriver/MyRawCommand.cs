@@ -1,35 +1,32 @@
 ﻿using System;
 using System.Data;
+using MySqlRawDriver.Internal;
 
 namespace MySqlRawDriver
 {
-    public class MyRawDbCommand : IDbCommand
+    public class MyRawCommand : IDbCommand
     {
-        private MyRawDbConnection _connection;
+        private MyRawConnection _connection;
 
         public IDbTransaction Transaction { get; set; }
         public string CommandText { get; set; }
         public int CommandTimeout { get; set; }
         public CommandType CommandType { get; set; } = CommandType.Text;
-        public IDataParameterCollection Parameters { get; } = new MyRawDbParameterCollection();
+        public IDataParameterCollection Parameters { get; } = new ParameterCollection();
         public UpdateRowSource UpdatedRowSource { get; set; }
 
         public IDbConnection Connection
         {
             get => _connection;
-            set => _connection = (MyRawDbConnection)value;
+            set => _connection = (MyRawConnection)value;
         }
 
-        internal MyRawDbCommand(MyRawDbConnection connection)
+        internal MyRawCommand(MyRawConnection connection)
         {
             _connection = connection;
         }
 
         public void Dispose()
-        {
-        }
-
-        public void Prepare()
         {
         }
 
@@ -39,7 +36,7 @@ namespace MySqlRawDriver
 
         public IDbDataParameter CreateParameter()
         {
-            return new MyRawDbParameter();
+            return new Parameter();
         }
 
         public int ExecuteNonQuery()
@@ -49,7 +46,7 @@ namespace MySqlRawDriver
 
         public IDataReader ExecuteReader()
         {
-            return new MyRawDbReader(_connection.QueryMultiple(PrepareQuery()));
+            return new MyRawReader(_connection.QueryMultiple(PrepareQuery()));
         }
 
         public IDataReader ExecuteReader(CommandBehavior behavior)
@@ -62,6 +59,10 @@ namespace MySqlRawDriver
             return _connection.QueryScalar(PrepareQuery());
         }
 
+        public void Prepare()
+        {
+        }
+
         private string PrepareQuery()
         {
             switch (CommandType)
@@ -71,7 +72,7 @@ namespace MySqlRawDriver
                 case CommandType.TableDirect:
                     return "select * from " + CommandText;
                 case CommandType.Text:
-                    return MyRawHelper.PrepareQuery(CommandText, Parameters);
+                    return Helper.PrepareQuery(CommandText, Parameters);
                 default:
                     throw new InvalidOperationException("Invalid command type.");
             }

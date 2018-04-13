@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Configuration;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Resources;
 using System.Threading;
@@ -15,9 +14,9 @@ namespace MySqlRawTest
     {
         public const string DatabaseName = "mysqlrawdriver";
 
-        public static MyRawDbConnection GetConnection()
+        public static MyRawConnection GetConnection()
         {
-            var db = new MyRawDbConnection(ConfigurationManager.ConnectionStrings["local"].ConnectionString);
+            var db = new MyRawConnection(ConfigurationManager.ConnectionStrings["local"].ConnectionString);
             db.Open();
             return db;
         }
