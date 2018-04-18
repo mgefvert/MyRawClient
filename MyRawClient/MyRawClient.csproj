@@ -48,6 +48,8 @@
     <Compile Include="Enumerations\StatusFlags.cs" />
     <Compile Include="Enumerations\RawFieldType.cs" />
     <Compile Include="Internal\Checksum.cs" />
+    <Compile Include="Internal\Connection.cs" />
+    <Compile Include="MyRawConnectionPool.cs" />
     <Compile Include="MyRawTransaction.cs" />
     <Compile Include="MyRawReader.cs" />
     <Compile Include="Internal\ParameterCollection.cs" />

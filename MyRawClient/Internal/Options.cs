@@ -14,5 +14,7 @@ namespace MyRawClient.Internal
         public string Server { get; set; }
         public bool UseCompression { get; set; }
         public string User { get; set; }
+
+        internal string Key => string.Join("|", Server, Database, User, Port, Password.GetHashCode(), UseCompression, Encoding.WindowsCodePage);
     }
 }

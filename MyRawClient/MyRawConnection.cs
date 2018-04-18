@@ -1,41 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
-using System.Net.Sockets;
-using MyRawClient.Auth;
 using MyRawClient.Enumerations;
 using MyRawClient.Internal;
-using MyRawClient.PacketHandlers;
 using MyRawClient.Packets;
 
 namespace MyRawClient
 {
     public class MyRawConnection : IDbConnection
     {
-        private static readonly CapabilityFlags DefaultCapabilities =
-            CapabilityFlags.ClientLongPassword |
-            CapabilityFlags.ClientConnectWithDB |
-            CapabilityFlags.ClientSecureConnection |
-            CapabilityFlags.ClientProtocol41 |
-            CapabilityFlags.ClientMultiStatements |
-            CapabilityFlags.ClientMultiResults;
-
         public string ConnectionString { get; set; }
         public string Database { get; private set; }
         public Options Options { get; } = new Options();
+        public bool Pooled { get; private set; }
         public Result Result { get; protected set; }
-        public ConnectionState State { get; protected set; } = ConnectionState.Closed;
-        public ServerInfo ServerInfo { get; } = new ServerInfo();
 
         public int ConnectionTimeout => Options.ConnectTimeout;
         public long LastInsertId => Result?.LastInsertId ?? 0;
         public long RowsAffected => Result?.RowsAffected ?? 0;
+        public ConnectionState State => Connection?.State ?? ConnectionState.Closed;
+        public ServerInfo ServerInfo => Connection?.ServerInfo;
 
-        private Stream _stream;
-        private TcpClient _client;
-        private IPacketHandler _handler;
+        internal Connection Connection;
 
         public MyRawConnection()
         {
@@ -59,43 +46,35 @@ namespace MyRawClient
 
         // --- Internal methods ---
 
-        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        protected void AssertStateIs(params ConnectionState[] states)
+        protected void AssertConnected()
         {
-            if (!states.Contains(State))
-                throw new InvalidOperationException("Unable to perform operation when connection state is " + State);
-        }
-
-        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        protected void AssertStateIsNot(params ConnectionState[] states)
-        {
-            if (states.Contains(State))
-                throw new InvalidOperationException("Unable to perform operation when connection state is " + State);
+            if (Connection == null || Connection.State == ConnectionState.Closed || Connection.State == ConnectionState.Broken)
+                throw new MyRawException("Database connection is not open.");
         }
 
         protected List<ResultSet> DoQuery(string sql, int capacity = 256)
         {
-            AssertStateIs(ConnectionState.Open);
-
-            State = ConnectionState.Executing;
+            AssertConnected();
+            Connection.AssertStateIs(ConnectionState.Open);
+            Connection.State = ConnectionState.Executing;
 
             // Build and send query
             var builder = new PacketBuilder(Options.Encoding);
             builder.AppendInt1((byte)Commands.Query);
             builder.AppendStringFixed(sql);
-            _handler.SendPacket(_stream, builder.ToPacket(), true);
+            Connection.SendPacket(builder.ToPacket(), true);
 
             List<ResultSet> results = null;
             do
             {
                 // Read response
-                var packet = _handler.ReadPacket(_stream);
+                var packet = Connection.ReadPacket();
 
                 // Execute queries with no result set
                 if (PacketReader.IsOkPacket(packet))
                 {
                     HandleOkPacket(packet);
-                    State = ConnectionState.Open;
+                    Connection.State = ConnectionState.Open;
                     return results;
                 }
 
@@ -105,16 +84,16 @@ namespace MyRawClient
                 var resultSet = new ResultSet(columnCount, capacity, Options.Encoding);
 
                 // Fetch column definitions
-                State = ConnectionState.Fetching;
+                Connection.State = ConnectionState.Fetching;
                 for (var i = 0; i < columnCount; i++)
                     resultSet.Fields.Add(FetchColumnDefinition());
 
-                HandleOkPacket(_handler.ReadPacket(_stream));
+                HandleOkPacket(Connection.ReadPacket());
 
                 // Fetch all data
                 for (;;)
                 {
-                    packet = _handler.ReadPacket(_stream);
+                    packet = Connection.ReadPacket();
                     if (PacketReader.IsOkPacket(packet))
                     {
                         HandleOkPacket(packet);
@@ -129,14 +108,14 @@ namespace MyRawClient
                 results.Add(resultSet);
             } while (Result.Status.HasFlag(StatusFlags.MoreResultsExist));
 
-            State = ConnectionState.Open;
+            Connection.State = ConnectionState.Open;
             return results;
         }
 
         private ResultField FetchColumnDefinition()
         {
             var item = new ResultField();
-            var packet = _handler.ReadPacket(_stream);
+            var packet = Connection.ReadPacket();
             var position = 0;
 
             item.Catalog = PacketReader.ReadStringLengthEncoded(packet, ref position, Options.Encoding);
@@ -165,39 +144,6 @@ namespace MyRawClient
             Result = Result.Decode(packet, Options.Encoding);
         }
 
-        protected void InitializeConnection()
-        {
-            var packet = _handler.ReadPacket(_stream);
-            var handshake = HandshakeRequest.Decode(packet, Options.Encoding);
-            ServerInfo.Capabilities = handshake.Capabilities;
-            ServerInfo.CharacterSet = handshake.CharacterSet;
-            ServerInfo.ConnectionId = handshake.ConnectionId;
-            ServerInfo.ServerVersion = handshake.ServerVersion;
-
-            var mycaps = DefaultCapabilities;
-            if (Options.UseCompression)
-                mycaps |= CapabilityFlags.ClientCompress;
-
-            _handler.SendPacket(_stream, new HandshakeResponse
-            {
-                Capabilities = mycaps,
-                MaxPacketSize = 65536,
-                CharacterSet = 33,
-                User = Options.User,
-                Database = Options.Database,
-                Password = NativePassword.Encrypt(Options.Encoding.GetBytes(Options.Password), handshake.AuthData)
-            }.Encode(Options.Encoding), false);
-
-            var response = _handler.ReadPacket(_stream);
-            if (PacketReader.IsOkPacket(response))
-                HandleOkPacket(response);
-            else
-                throw new MyRawException("Unrecognized packet in handshake: " + PacketReader.PacketToString(response));
-
-            if (ServerInfo.Capabilities.HasFlag(CapabilityFlags.ClientCompress) && Options.UseCompression)
-                _handler = new CompressedPacketHandler(_handler);
-        }
-
         protected void UpdateDatabaseName()
         {
             Database = QueryScalar<string>("select database()");
@@ -213,35 +159,16 @@ namespace MyRawClient
 
         public IDbTransaction BeginTransaction(IsolationLevel il)
         {
+            AssertConnected();
             return new MyRawTransaction(this);
         }
 
         public void Close()
         {
-            if (_stream != null)
-            {
-                try
-                {
-                    _handler.SendPacket(_stream, PacketBuilder.MakeCommand(Commands.Quit), true);
-                }
-                catch
-                {
-                    //
-                }
-            }
+            if (Connection != null)
+                MyRawConnectionPool.Consume(Options.Key, Connection, null);
 
-            try
-            {
-                _stream = null;
-                _client?.Close();
-                _client = null;
-            }
-            catch
-            {
-                //
-            }
-
-            State = ConnectionState.Closed;
+            Connection = null;
         }
 
         public void ChangeDatabase(string databaseName)
@@ -252,6 +179,7 @@ namespace MyRawClient
 
         public IDbCommand CreateCommand()
         {
+            AssertConnected();
             return new MyRawCommand(this);
         }
 
@@ -263,50 +191,37 @@ namespace MyRawClient
 
         public void Open()
         {
+            if (Connection != null)
+                return;
+
             if (!string.IsNullOrWhiteSpace(ConnectionString))
                 Helper.ParseConnectionString(ConnectionString, Options);
 
-            AssertStateIs(ConnectionState.Closed);
-            State = ConnectionState.Connecting;
-            try
+            Connection = MyRawConnectionPool.Next(Options.Key);
+            if (Connection != null)
             {
-                _client = new TcpClient
-                {
-                    ReceiveTimeout = Options.ConnectTimeout * 1000,
-                    ReceiveBufferSize = 32768
-                };
-                _client.Connect(Options.Server, Options.Port);
-                _stream = new BufferedStream(_client.GetStream(), 16384);
-                _handler = new DefaultPacketHandler(Options.Encoding);
-
-                try
-                {
-                    InitializeConnection();
-                    State = ConnectionState.Open;
-                    _client.ReceiveTimeout = Options.CommandTimeout * 1000;
-                    _client.SendTimeout = Options.CommandTimeout * 1000;
-
-                    UpdateDatabaseName();
-                }
-                catch (Exception)
-                {
-                    Close();
-                    throw;
-                }
+                // Reuse a pooled connection
+                Pooled = true;
+                Connection.Reset();
             }
-            catch (Exception)
+            else
             {
-                State = ConnectionState.Closed;
-                throw;
+                // Create a new connection
+                Pooled = false;
+                Connection = new Connection();
+                HandleOkPacket(Connection.Setup(Options));
             }
+
+            UpdateDatabaseName();
+            if (Database != Options.Database)
+                ChangeDatabase(Options.Database);
         }
 
         public void Ping()
         {
-            AssertStateIs(ConnectionState.Open);
-
-            _handler.SendPacket(_stream, PacketBuilder.MakeCommand(Commands.Ping), true);
-            HandleOkPacket(_handler.ReadPacket(_stream));
+            AssertConnected();
+            Connection.SendCommand(Commands.Ping);
+            HandleOkPacket(Connection.ReadPacket());
         }
 
         public ResultSet Query(string sql)
@@ -339,11 +254,8 @@ namespace MyRawClient
 
         public void ResetConnection()
         {
-            AssertStateIs(ConnectionState.Open);
-
-            _handler.SendPacket(_stream, PacketBuilder.MakeCommand(Commands.ResetConnection), true);
-            HandleOkPacket(_handler.ReadPacket(_stream));
-            State = ConnectionState.Open;
+            AssertConnected();
+            HandleOkPacket(Connection.Reset());
         }
     }
 }
