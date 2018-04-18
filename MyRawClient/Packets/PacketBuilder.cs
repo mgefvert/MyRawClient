@@ -1,23 +1,25 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using MyRawClient.Enumerations;
 
 namespace MyRawClient.Packets
 {
+    /// <summary>
+    /// Helper class for building MySQL packets. Writes information to a MemoryStream which can then
+    /// be saved. Does not include the four-byte header.
+    /// </summary>
     public class PacketBuilder : IDisposable
     {
         private readonly MemoryStream _stream;
         private readonly BinaryWriter _writer;
         private readonly Encoding _encoding;
 
-        public PacketBuilder(Encoding encoding, byte sequenceId)
+        public PacketBuilder(Encoding encoding)
         {
             _encoding = encoding;
             _stream = new MemoryStream();
             _writer = new BinaryWriter(_stream, encoding);
-
-            AppendInt3(0);
-            AppendInt1(sequenceId);
         }
 
         public void Dispose()
@@ -26,12 +28,13 @@ namespace MyRawClient.Packets
             _stream.Dispose();
         }
 
+        public static byte[] MakeCommand(Commands command)
+        {
+            return new[] { (byte)command };
+        }
+
         public byte[] ToPacket()
         {
-            _stream.Position = 0;
-            AppendInt3((uint)(_stream.Length - 4));
-            _stream.Position = _stream.Length;
-
             return _stream.ToArray();
         }
 

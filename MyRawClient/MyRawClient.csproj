@@ -60,6 +60,8 @@
     <Compile Include="Enumerations\ResultMode.cs" />
     <Compile Include="Enumerations\CapabilityFlags.cs" />
     <Compile Include="Internal\ServerInfo.cs" />
+    <Compile Include="PacketHandlers\IPacketHandler.cs" />
+    <Compile Include="PacketHandlers\DefaultPacketHandler.cs" />
     <Compile Include="Packets\PacketReader.cs" />
     <Compile Include="Packets\PacketBuilder.cs" />
     <Compile Include="MyRawConnection.cs" />

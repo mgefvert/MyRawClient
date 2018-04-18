@@ -12,6 +12,7 @@ namespace MyRawClient.Internal
         public string Password { get; set; }
         public ushort Port { get; set; } = 3306;
         public string Server { get; set; }
+        public bool UseCompression { get; set; }
         public string User { get; set; }
     }
 }

@@ -7,12 +7,21 @@ using System.Net.Sockets;
 using MyRawClient.Auth;
 using MyRawClient.Enumerations;
 using MyRawClient.Internal;
+using MyRawClient.PacketHandler;
 using MyRawClient.Packets;
 
 namespace MyRawClient
 {
     public class MyRawConnection : IDbConnection
     {
+        private static readonly CapabilityFlags DefaultCapabilities =
+            CapabilityFlags.ClientLongPassword |
+            CapabilityFlags.ClientConnectWithDB |
+            CapabilityFlags.ClientSecureConnection |
+            CapabilityFlags.ClientProtocol41 |
+            CapabilityFlags.ClientMultiStatements |
+            CapabilityFlags.ClientMultiResults;
+
         public string ConnectionString { get; set; }
         public string Database { get; private set; }
         public Options Options { get; } = new Options();
@@ -26,8 +35,7 @@ namespace MyRawClient
 
         private Stream _stream;
         private TcpClient _client;
-        private byte _sequence;
-        private readonly byte[] _lastHeader = new byte[4];
+        private IPacketHandler _handler;
 
         public MyRawConnection()
         {
@@ -69,20 +77,19 @@ namespace MyRawClient
         {
             AssertStateIs(ConnectionState.Open);
 
-            _sequence = 0;
             State = ConnectionState.Executing;
 
             // Build and send query
-            var builder = new PacketBuilder(Options.Encoding, _sequence++);
+            var builder = new PacketBuilder(Options.Encoding);
             builder.AppendInt1((byte)Commands.Query);
             builder.AppendStringFixed(sql);
-            SendPacket(builder.ToPacket());
+            _handler.SendPacket(builder.ToPacket(), true);
 
             List<ResultSet> results = null;
             do
             {
                 // Read response
-                var packet = ReadPacket();
+                var packet = _handler.ReadPacket();
 
                 // Execute queries with no result set
                 if (PacketReader.IsOkPacket(packet))
@@ -102,12 +109,12 @@ namespace MyRawClient
                 for (var i = 0; i < columnCount; i++)
                     resultSet.Fields.Add(FetchColumnDefinition());
 
-                HandleOkPacket(ReadPacket());
+                HandleOkPacket(_handler.ReadPacket());
 
                 // Fetch all data
                 for (;;)
                 {
-                    packet = ReadPacket();
+                    packet = _handler.ReadPacket();
                     if (PacketReader.IsOkPacket(packet))
                     {
                         HandleOkPacket(packet);
@@ -129,7 +136,7 @@ namespace MyRawClient
         private ResultField FetchColumnDefinition()
         {
             var item = new ResultField();
-            var packet = ReadPacket();
+            var packet = _handler.ReadPacket();
             var position = 0;
 
             item.Catalog = PacketReader.ReadStringLengthEncoded(packet, ref position, Options.Encoding);
@@ -160,67 +167,34 @@ namespace MyRawClient
 
         protected void InitializeConnection()
         {
-            var packet = ReadPacket();
+            var packet = _handler.ReadPacket();
             var handshake = HandshakeRequest.Decode(packet, Options.Encoding);
             ServerInfo.Capabilities = handshake.Capabilities;
             ServerInfo.CharacterSet = handshake.CharacterSet;
             ServerInfo.ConnectionId = handshake.ConnectionId;
             ServerInfo.ServerVersion = handshake.ServerVersion;
 
-            SendPacket(new HandshakeResponse
+            var mycaps = DefaultCapabilities;
+            if (Options.UseCompression)
+                mycaps |= CapabilityFlags.ClientCompress;
+
+            _handler.SendPacket(new HandshakeResponse
             {
-                Capabilities = CapabilityFlags.ClientLongPassword | CapabilityFlags.ClientConnectWithDB | CapabilityFlags.ClientSecureConnection |
-                               CapabilityFlags.ClientProtocol41 | CapabilityFlags.ClientMultiStatements | CapabilityFlags.ClientMultiResults,
+                Capabilities = mycaps,
                 MaxPacketSize = 65536,
                 CharacterSet = 33,
                 User = Options.User,
                 Database = Options.Database,
                 Password = NativePassword.Encrypt(Options.Encoding.GetBytes(Options.Password), handshake.AuthData)
-            }.Encode(Options.Encoding, _sequence++));
+            }.Encode(Options.Encoding), false);
 
-            var response = ReadPacket();
+            var response = _handler.ReadPacket();
             if (PacketReader.IsOkPacket(response))
                 HandleOkPacket(response);
             else
                 throw new MyRawException("Unrecognized packet in handshake: " + PacketReader.PacketToString(response));
         }
 
-        protected byte[] ReadPacket()
-        {
-            try
-            {
-                if (_stream.Read(_lastHeader, 0, 4) != 4)
-                    throw new MyRawException("Invalid data received from server, closing connection.");
-
-                var sequence = _lastHeader[3];
-                if (sequence != _sequence++)
-                    throw new MyRawException("Sequence ID out of sync, closing connection.");
-
-                _lastHeader[3] = 0;
-                var pktlen = BitConverter.ToInt32(_lastHeader, 0);
-                _lastHeader[3] = sequence;
-
-                var buffer = new byte[pktlen];
-                if (_stream.Read(buffer, 0, pktlen) != pktlen)
-                    throw new MyRawException("Invalid data received from server, closing connection.");
-
-                if (PacketReader.IsErrPacket(buffer))
-                    throw MyRawException.Decode(buffer, Options.Encoding);
-
-                return buffer;
-            }
-            catch (Exception)
-            {
-                Close();
-                throw;
-            }
-        }
-
-
-        protected void SendPacket(byte[] buffer)
-        {
-            _stream.Write(buffer, 0, buffer.Length);
-        }
 
         protected void UpdateDatabaseName()
         {
@@ -246,10 +220,7 @@ namespace MyRawClient
             {
                 try
                 {
-                    _sequence = 0;
-                    var builder = new PacketBuilder(Options.Encoding, _sequence++);
-                    builder.AppendInt1((byte)Commands.Quit);
-                    SendPacket(builder.ToPacket());
+                    _handler.SendPacket(PacketBuilder.MakeCommand(Commands.Quit), true);
                 }
                 catch
                 {
@@ -304,6 +275,7 @@ namespace MyRawClient
                 };
                 _client.Connect(Options.Server, Options.Port);
                 _stream = new BufferedStream(_client.GetStream(), 16384);
+                _handler = new DefaultPacketHandler(_stream, Options.Encoding);
 
                 try
                 {
@@ -331,12 +303,8 @@ namespace MyRawClient
         {
             AssertStateIs(ConnectionState.Open);
 
-            _sequence = 0;
-            var builder = new PacketBuilder(Options.Encoding, _sequence++);
-            builder.AppendInt1((byte)Commands.Ping);
-
-            SendPacket(builder.ToPacket());
-            HandleOkPacket(ReadPacket());
+            _handler.SendPacket(PacketBuilder.MakeCommand(Commands.Ping), true);
+            HandleOkPacket(_handler.ReadPacket());
         }
 
         public ResultSet Query(string sql)
@@ -371,12 +339,8 @@ namespace MyRawClient
         {
             AssertStateIs(ConnectionState.Open);
 
-            _sequence = 0;
-            var builder = new PacketBuilder(Options.Encoding, _sequence++);
-            builder.AppendInt1((byte)Commands.ResetConnection);
-
-            SendPacket(builder.ToPacket());
-            HandleOkPacket(ReadPacket());
+            _handler.SendPacket(PacketBuilder.MakeCommand(Commands.ResetConnection), true);
+            HandleOkPacket(_handler.ReadPacket());
             State = ConnectionState.Open;
         }
     }

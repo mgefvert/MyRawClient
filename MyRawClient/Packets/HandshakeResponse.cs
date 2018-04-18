@@ -13,9 +13,9 @@ namespace MyRawClient.Packets
         public byte[] Password { get; set; }
         public string User { get; set; }
 
-        public byte[] Encode(Encoding encoding, byte sequence)
+        public byte[] Encode(Encoding encoding)
         {
-            var builder = new PacketBuilder(encoding, sequence);
+            var builder = new PacketBuilder(encoding);
 
             builder.AppendInt4((uint)Capabilities);
             builder.AppendInt4(MaxPacketSize); // Max packet size
