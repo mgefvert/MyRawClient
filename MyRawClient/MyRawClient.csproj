@@ -47,6 +47,7 @@
     <Compile Include="Enumerations\InternalType.cs" />
     <Compile Include="Enumerations\StatusFlags.cs" />
     <Compile Include="Enumerations\RawFieldType.cs" />
+    <Compile Include="Internal\Checksum.cs" />
     <Compile Include="MyRawTransaction.cs" />
     <Compile Include="MyRawReader.cs" />
     <Compile Include="Internal\ParameterCollection.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="Enumerations\ResultMode.cs" />
     <Compile Include="Enumerations\CapabilityFlags.cs" />
     <Compile Include="Internal\ServerInfo.cs" />
+    <Compile Include="PacketHandlers\CompressedPacketHandler.cs" />
     <Compile Include="PacketHandlers\IPacketHandler.cs" />
     <Compile Include="PacketHandlers\DefaultPacketHandler.cs" />
     <Compile Include="Packets\PacketReader.cs" />

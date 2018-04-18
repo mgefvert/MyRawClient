@@ -22,7 +22,17 @@ namespace MyRawClient.Internal
                   c == 0x02ca || c == 0x02cb || c == 0x02d9 || c == 0x0300 || c == 0x0301 || c == 0x2018 || 
                   c == 0x2019 || c == 0x201a || c == 0x2032 || c == 0x2035 || c == 0x275b || c == 0x275c || 
                   c == 0xff07;
+        }
 
+        private static bool ParseBool(string value)
+        {
+            if (bool.TryParse(value, out var boolval))
+                return boolval;
+
+            if (int.TryParse(value, out var intval))
+                return intval != 0;
+
+            throw new MyRawException($"Invalid boolean value '{value}'.");
         }
 
         public static void ParseConnectionString(string connectionString, Options options)
@@ -39,6 +49,12 @@ namespace MyRawClient.Internal
 
                 switch (key)
                 {
+                    case "compress":
+                    case "use compression":
+                    case "usecompression":
+                        options.UseCompression = ParseBool(value);
+                        break;
+
                     case "connect timeout":
                     case "connection timeout":
                     case "connectiontimeout":

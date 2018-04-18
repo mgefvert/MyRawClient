@@ -1,10 +1,11 @@
 ﻿using System;
+using System.IO;
 
-namespace MyRawClient.PacketHandler
+namespace MyRawClient.PacketHandlers
 {
     public interface IPacketHandler
     {
-        byte[] ReadPacket();
-        void SendPacket(byte[] buffer, bool newCommand);
+        byte[] ReadPacket(Stream stream);
+        void SendPacket(Stream stream, byte[] buffer, bool newCommand);
     }
 }
