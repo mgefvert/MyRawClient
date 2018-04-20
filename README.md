@@ -14,22 +14,23 @@ The library is considered roughly alpha stage stability with unit tests. It's cu
 ## Features
 
 Implemented features:
-* Run queries against the MySQL server with or without result sets
-* Multi-result sets always handled
-* Thin wrapper around IDbTransaction with BEGIN/COMMIT commands
-* Emulates parameter support by parsing the query and substituting parameters
+* Compressed protocol
 * Dapper support
+* Emulates parameter support by parsing the query and substituting parameters
+* Multi-result sets always handled
+* Rudimentary connection pool handling
+* Run queries against the MySQL server with or without result sets
 * Standard IDbConnection / IDbReader interfaces supported
+* Thin wrapper around IDbTransaction with BEGIN/COMMIT commands
 
 Not supported:
-* Cursors
-* Proper in/out parameter bindings
-* Prepared statements
 * Authentication schemes are limited to native mysql passwords for now
-* SSL/TLS
-* Compressed streams
-* Nonbuffered reading
+* Cursors
 * .NET Core
+* Nonbuffered reading
+* Prepared statements
+* Proper in/out parameter bindings
+* SSL/TLS
 
 (any of this may be implemented in the future)
 
