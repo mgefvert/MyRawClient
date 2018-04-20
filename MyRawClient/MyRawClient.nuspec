@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/mgefvert/MyRawClient</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>Initial release</releaseNotes>
+    <releaseNotes>Compressed connections, connection pool implemented.</releaseNotes>
     <copyright>Copyright 2018</copyright>
     <tags>MySQL</tags>
   </metadata>
